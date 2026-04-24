@@ -19,6 +19,8 @@ async def amain(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=getattr(logging, args.log_level.upper(), logging.INFO))
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
     cfg = load_config(args.config)
     if not cfg.telegram.token:
         raise SystemExit(f"Telegram token env var is empty: {cfg.telegram.token_env}")
@@ -60,4 +62,3 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-
