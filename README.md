@@ -10,6 +10,9 @@ talks to configured Python backends; for Emacs-Harness, the backend calls the
 harness-supplied `Lisp/harness-telegram-bridge.el` through `emacsclient`,
 leaving Emacs-Harness as the control plane.
 
+This repository intentionally contains only Python package/supporting code. The
+Elisp bridge lives in the control-plane repo that consumes the package.
+
 ## Usage
 
 ```bash
@@ -32,7 +35,20 @@ harness_root = "/srv/emacs-node/Harness"
 socket_name = "/srv/emacs-node/.emacs.d/var/server/emacs-node"
 emacsclient = "emacsclient"
 batch_fallback = true
+bridge_elisp = "/srv/emacs-node/Harness/Lisp/harness-telegram-bridge.el"
 ```
+
+## Nix Node Deployment
+
+The live `loxley` node consumes this package through the `harness-telegram`
+flake input in `Nix-Emacs-Node`. The Nix module builds the package as a Python
+application, starts `harness-telegram.service`, exports the Telegram bot token
+from `/run/secrets/telegram_bot_token`, and sets
+`EH_TELEGRAM_TRANSPORT=external` on the Emacs daemon so telega is not started
+for live harness traffic.
+
+Routine housekeeping commits in this repo do not affect the node until
+`Nix-Emacs-Node/flake.lock` is repinned.
 
 ## Borrowed Shape
 
