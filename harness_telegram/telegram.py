@@ -139,39 +139,60 @@ class TelegramAdapter:
         *,
         agent_id: str | None = None,
         session_key: str | None = None,
-    ) -> None:
+    ) -> bool:
         chunks = _split_message(_to_telegram_markdown(text), TELEGRAM_MAX_LEN)
+        ok = True
         async with httpx.AsyncClient(timeout=30.0) as client:
             for chunk in chunks:
                 response = await self._post_send_message(client, chat_id=chat_id, text=chunk)
-                if response is not None:
+                if response is None:
+                    ok = False
+                else:
                     self._remember_reply_context(
                         chat_id=chat_id,
                         response=response,
                         agent_id=agent_id,
                         session_key=session_key,
                     )
+        return ok
 
     async def send_message_with_keyboard(
         self,
         chat_id: str | int,
         text: str,
         keyboard: dict[str, Any],
-    ) -> None:
+    ) -> bool:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            await self._post_send_message(
+            response = await self._post_send_message(
                 client,
                 chat_id=chat_id,
                 text=_to_telegram_markdown(text),
                 reply_markup=keyboard,
             )
+        return response is not None
 
-    async def send_approval_request(self, chat_id: str | int, request: ApprovalRequest) -> None:
+    async def send_approval_request(self, chat_id: str | int, request: ApprovalRequest) -> bool:
         self._approval_store.register(request)
-        await self.send_message_with_keyboard(
+        return await self.send_message_with_keyboard(
             chat_id,
             request.summary_text(),
             build_approval_keyboard(request),
+        )
+
+    async def send_harness_result(
+        self,
+        chat_id: str | int,
+        result: HandlerResult,
+        *,
+        agent_id: str | None = None,
+        session_key: str | None = None,
+    ) -> bool:
+        """Send a handler result to CHAT_ID and return whether all sends succeeded."""
+        return await self._send_handler_result(
+            chat_id,
+            result,
+            agent_id=agent_id,
+            session_key=session_key,
         )
 
     async def _send_handler_result(
@@ -181,19 +202,26 @@ class TelegramAdapter:
         *,
         agent_id: str | None = None,
         session_key: str | None = None,
-    ) -> None:
+    ) -> bool:
         if result is None:
-            return
+            return True
         approvals: list[ApprovalRequest] = []
         if isinstance(result, HarnessResult):
             text = result.operator_text()
             approvals = result.approval_requests
         else:
             text = str(result)
+        ok = True
         if text and text.strip() != NO_REPLY_SENTINEL:
-            await self.send_message(chat_id, text, agent_id=agent_id, session_key=session_key)
+            ok = await self.send_message(
+                chat_id,
+                text,
+                agent_id=agent_id,
+                session_key=session_key,
+            )
         for request in approvals:
-            await self.send_approval_request(chat_id, request)
+            ok = await self.send_approval_request(chat_id, request) and ok
+        return ok
 
     async def _post_send_message(
         self,
@@ -532,4 +560,3 @@ def _callback_answer_text(action: str) -> str:
         "needs_revision": "Needs revision",
         "always_allow": "Always allowed",
     }.get(action, "Done")
-

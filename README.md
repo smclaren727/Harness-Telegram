@@ -29,6 +29,8 @@ operator_chat_id = "123456"
 allowed_chat_ids = ["123456"]
 import_root = "/srv/emacs-node/Harness/Runtime/Imports/Telegram"
 per_peer_direct_sessions = false
+outbox_poll_interval_seconds = 5
+outbox_max_attempts = 3
 
 [emacs]
 harness_root = "/srv/emacs-node/Harness"
@@ -37,6 +39,11 @@ emacsclient = "emacsclient"
 batch_fallback = true
 bridge_elisp = "/srv/emacs-node/Harness/Lisp/harness-telegram-bridge.el"
 ```
+
+When `emacs.harness_root` is set, the daemon also polls
+`Runtime/State/Harness-Telegram/Outbox/pending/` for HarnessResult-compatible
+notification JSON. Files without `chat_id` are sent to `operator_chat_id`;
+successful sends move to `sent/`, and repeated failures move to `failed/`.
 
 ## Nix Node Deployment
 

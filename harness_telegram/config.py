@@ -20,6 +20,8 @@ class TelegramConfig:
     allowed_chat_ids: list[str] = field(default_factory=list)
     import_root: str = ""
     per_peer_direct_sessions: bool = False
+    outbox_poll_interval_seconds: float = 5.0
+    outbox_max_attempts: int = 3
 
     @property
     def token(self) -> str:
@@ -68,6 +70,15 @@ def load_config(path: str | Path) -> HarnessTelegramConfig:
                 cfg.telegram.per_peer_direct_sessions,
             )
         )
+        cfg.telegram.outbox_poll_interval_seconds = float(
+            telegram.get(
+                "outbox_poll_interval_seconds",
+                cfg.telegram.outbox_poll_interval_seconds,
+            )
+        )
+        cfg.telegram.outbox_max_attempts = int(
+            telegram.get("outbox_max_attempts", cfg.telegram.outbox_max_attempts)
+        )
 
     emacs = data.get("emacs", {})
     if emacs:
@@ -86,4 +97,3 @@ def load_config(path: str | Path) -> HarnessTelegramConfig:
             Path(cfg.emacs.harness_root) / "Runtime" / "Imports" / "Telegram"
         )
     return cfg
-

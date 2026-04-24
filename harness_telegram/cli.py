@@ -9,6 +9,7 @@ import signal
 
 from harness_telegram.backend import EmacsHarnessBackend
 from harness_telegram.config import load_config
+from harness_telegram.outbox import HarnessTelegramOutbox
 from harness_telegram.telegram import TelegramAdapter
 
 
@@ -45,14 +46,25 @@ async def amain(argv: list[str] | None = None) -> int:
         except NotImplementedError:
             pass
 
-    task = asyncio.create_task(adapter.start_polling(backend.handle_message))
+    tasks = [asyncio.create_task(adapter.start_polling(backend.handle_message))]
+    if cfg.emacs.harness_root:
+        outbox = HarnessTelegramOutbox(
+            harness_root=cfg.emacs.harness_root,
+            adapter=adapter,
+            operator_chat_id=cfg.telegram.operator_chat_id,
+            poll_interval_seconds=cfg.telegram.outbox_poll_interval_seconds,
+            max_attempts=cfg.telegram.outbox_max_attempts,
+        )
+        tasks.append(asyncio.create_task(outbox.run(stop_event)))
     await stop_event.wait()
     adapter.stop()
-    task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        pass
+    for task in tasks:
+        task.cancel()
+    for task in tasks:
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
     return 0
 
 

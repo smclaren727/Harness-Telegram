@@ -278,3 +278,38 @@ def test_allowed_chat_ids_include_operator_chat():
     assert adapter._chat_allowed("other-chat")
     assert not adapter._chat_allowed("unknown")
 
+
+@pytest.mark.asyncio
+async def test_send_harness_result_sends_inline_approval_keyboard(monkeypatch):
+    posts: list[dict] = []
+
+    class FakeSendClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def post(self, url, json):
+            posts.append(json)
+            return FakeResponse()
+
+    monkeypatch.setattr("harness_telegram.telegram.httpx.AsyncClient", FakeSendClient)
+    adapter = TelegramAdapter(token="token")
+
+    ok = await adapter.send_harness_result(
+        "operator-chat",
+        HarnessResult(
+            reply="review ready",
+            approval_requests=[
+                ApprovalRequest(approval_id="approval-1", kind="workflow", run_id="run-1")
+            ],
+        ),
+    )
+
+    assert ok is True
+    assert posts[0]["text"] == "review ready"
+    assert "reply_markup" in posts[1]
