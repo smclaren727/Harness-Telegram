@@ -31,6 +31,18 @@ logger = logging.getLogger(__name__)
 TELEGRAM_MAX_LEN = 4096
 REPLY_CONTEXT_LIMIT = 1024
 NO_REPLY_SENTINEL = "NO_REPLY"
+HARNESS_COMMANDS = {
+    "capabilities",
+    "capability-list",
+    "harness-help",
+    "list-capabilities",
+    "list-skills",
+    "list-workflows",
+    "skill-list",
+    "skills",
+    "workflow-list",
+    "workflows",
+}
 
 HandlerResult = HarnessResult | str | None
 
@@ -411,7 +423,10 @@ def normalize_telegram_message(
         candidate = parts[0].lower() if parts else ""
         if "@" in candidate:
             candidate = candidate.split("@", 1)[0]
-        if candidate and candidate != "start" and len(candidate) > 1:
+        normalized_candidate = candidate.replace("_", "-")
+        if normalized_candidate in HARNESS_COMMANDS:
+            clean_text = f"/{normalized_candidate}"
+        elif candidate and candidate != "start" and len(candidate) > 1:
             agent_id = candidate
             clean_text = parts[1] if len(parts) > 1 else ""
         elif candidate == "start":

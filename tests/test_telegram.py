@@ -81,6 +81,42 @@ def test_slash_command_routes_to_agent():
     assert inbound.text == "draft this"
 
 
+def test_harness_catalog_slash_command_stays_harness_text():
+    update = {
+        "update_id": 1,
+        "message": {
+            "message_id": 42,
+            "from": {"id": 12345, "first_name": "Sean"},
+            "chat": {"id": 12345, "type": "private"},
+            "text": "/skills",
+        },
+    }
+
+    inbound = normalize_telegram_message(update)
+
+    assert inbound is not None
+    assert inbound.agent_id == "default"
+    assert inbound.text == "/skills"
+
+
+def test_harness_catalog_slash_command_normalizes_bot_suffix_and_underscore():
+    update = {
+        "update_id": 1,
+        "message": {
+            "message_id": 42,
+            "from": {"id": 12345, "first_name": "Sean"},
+            "chat": {"id": 12345, "type": "private"},
+            "text": "/list_skills@HarnessBot",
+        },
+    }
+
+    inbound = normalize_telegram_message(update)
+
+    assert inbound is not None
+    assert inbound.agent_id == "default"
+    assert inbound.text == "/list-skills"
+
+
 def test_document_and_photo_attachments_are_normalized():
     update = {
         "update_id": 1,
