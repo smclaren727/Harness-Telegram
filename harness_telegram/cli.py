@@ -37,6 +37,7 @@ async def amain(argv: list[str] | None = None) -> int:
         allowed_chat_ids=cfg.telegram.allowed_chat_ids,
         import_root=cfg.telegram.import_root,
         per_peer_direct_sessions=cfg.telegram.per_peer_direct_sessions,
+        activate_all_messages=cfg.telegram.activate_all_messages,
     )
     adapter.on_approval = backend.handle_approval
 

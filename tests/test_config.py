@@ -13,6 +13,7 @@ bot_username = "harness_bot"
 operator_chat_id = "123"
 allowed_chat_ids = ["123", "-1001"]
 per_peer_direct_sessions = true
+activate_all_messages = true
 
 [emacs]
 harness_root = "/tmp/harness"
@@ -55,6 +56,7 @@ command = "claude --print"
     assert cfg.telegram.allowed_chat_ids == ["123", "-1001"]
     assert cfg.telegram.import_root == "/tmp/harness/Runtime/Imports/Telegram"
     assert cfg.telegram.per_peer_direct_sessions is True
+    assert cfg.telegram.activate_all_messages is True
     assert cfg.emacs.socket_name == "emacs-node"
     assert cfg.emacs.batch_fallback is False
     assert cfg.backend.type == "process"

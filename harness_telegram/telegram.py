@@ -60,6 +60,7 @@ class TelegramAdapter:
         allowed_chat_ids: list[str] | None = None,
         import_root: str | Path = "",
         per_peer_direct_sessions: bool = False,
+        activate_all_messages: bool = False,
         approval_store: PendingApprovalStore | None = None,
     ) -> None:
         self._token = token
@@ -73,6 +74,7 @@ class TelegramAdapter:
         self._file_base = f"https://api.telegram.org/file/bot{token}"
         self._import_root = Path(import_root) if import_root else Path.cwd() / "telegram-imports"
         self._per_peer_direct_sessions = per_peer_direct_sessions
+        self._activate_all_messages = activate_all_messages
         self._approval_store = approval_store or PendingApprovalStore()
         self._running = False
         self._reply_contexts: dict[tuple[str, str], tuple[str, str]] = {}
@@ -131,6 +133,7 @@ class TelegramAdapter:
             default_agent_id=self._default_agent_id,
             bot_username=self._bot_username,
             per_peer_mode=self._per_peer_direct_sessions,
+            activate_all_messages=self._activate_all_messages,
         )
         if inbound is None or not self._chat_allowed(inbound.chat_id):
             return
@@ -388,6 +391,7 @@ def normalize_telegram_message(
     bot_username: str = "",
     bot_user_id: int | None = None,
     per_peer_mode: bool = False,
+    activate_all_messages: bool = False,
 ) -> InboundMessage | None:
     message = update.get("message") or update.get("edited_message")
     if not message:
@@ -408,7 +412,7 @@ def normalize_telegram_message(
     else:
         chat_type = "channel"
 
-    if chat_type in {"group", "channel"} and not _is_activated(
+    if chat_type in {"group", "channel"} and not activate_all_messages and not _is_activated(
         message,
         text,
         bot_username,

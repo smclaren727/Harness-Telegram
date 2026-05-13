@@ -26,6 +26,7 @@ class TelegramConfig:
     allowed_chat_ids: list[str] = field(default_factory=list)
     import_root: str = ""
     per_peer_direct_sessions: bool = False
+    activate_all_messages: bool = False
     outbox_poll_interval_seconds: float = 5.0
     outbox_max_attempts: int = 3
 
@@ -109,6 +110,9 @@ def load_config(path: str | Path) -> HarnessTelegramConfig:
                 "per_peer_direct_sessions",
                 cfg.telegram.per_peer_direct_sessions,
             )
+        )
+        cfg.telegram.activate_all_messages = bool(
+            telegram.get("activate_all_messages", cfg.telegram.activate_all_messages)
         )
         cfg.telegram.outbox_poll_interval_seconds = float(
             telegram.get(

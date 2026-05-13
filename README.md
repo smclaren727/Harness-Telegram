@@ -64,6 +64,7 @@ token_env = "TELEGRAM_BOT_TOKEN"
 operator_chat_id = "123456"
 allowed_chat_ids = ["123456", "-100100200300"]
 import_root = "/srv/loxley/.local/share/harness-telegram/imports"
+activate_all_messages = true
 
 [process]
 default_agent = "codex"
@@ -94,6 +95,9 @@ The backend also exports session metadata to the child process:
 `HARNESS_TELEGRAM_THREAD_ID`, `HARNESS_TELEGRAM_MESSAGE_ID`, and
 `HARNESS_TELEGRAM_ATTACHMENTS_JSON`. If `input_mode = "stdin"`, the message text
 and attachment paths are sent on stdin instead of requiring a `{text}` argument.
+Set `telegram.activate_all_messages = true` for dedicated groups or forum topics
+where every message should be treated as agent input without requiring a slash
+command, bot mention, or reply to a bot message.
 
 ## Nix Node Deployment
 

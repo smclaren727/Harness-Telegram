@@ -43,6 +43,24 @@ def test_group_without_activation_is_ignored():
     assert normalize_telegram_message(update, bot_username="harness_bot") is None
 
 
+def test_group_message_can_activate_without_mention_when_configured():
+    update = {
+        "update_id": 1,
+        "message": {
+            "message_id": 42,
+            "from": {"id": 12345, "first_name": "Sean"},
+            "chat": {"id": -1001, "type": "supergroup"},
+            "text": "use this whole chat for codex",
+        },
+    }
+
+    inbound = normalize_telegram_message(update, activate_all_messages=True)
+
+    assert inbound is not None
+    assert inbound.text == "use this whole chat for codex"
+    assert inbound.session_key == "agent:default:telegram:group:-1001"
+
+
 def test_group_mention_with_forum_topic_keeps_thread_id():
     update = {
         "update_id": 1,
