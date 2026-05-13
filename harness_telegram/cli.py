@@ -7,7 +7,7 @@ import asyncio
 import logging
 import signal
 
-from harness_telegram.backend import EmacsHarnessBackend
+from harness_telegram.backend import build_backend
 from harness_telegram.config import load_config
 from harness_telegram.outbox import HarnessTelegramOutbox
 from harness_telegram.telegram import TelegramAdapter
@@ -26,10 +26,12 @@ async def amain(argv: list[str] | None = None) -> int:
     if not cfg.telegram.token:
         raise SystemExit(f"Telegram token env var is empty: {cfg.telegram.token_env}")
 
-    backend = EmacsHarnessBackend(cfg.emacs)
+    backend = build_backend(cfg)
     adapter = TelegramAdapter(
         token=cfg.telegram.token,
-        default_agent_id="default",
+        default_agent_id=(
+            cfg.process.default_agent if cfg.backend.type == "process" else "default"
+        ),
         bot_username=cfg.telegram.bot_username,
         operator_chat_id=cfg.telegram.operator_chat_id,
         allowed_chat_ids=cfg.telegram.allowed_chat_ids,

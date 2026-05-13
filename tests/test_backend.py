@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from harness_telegram.backend import EmacsHarnessBackend, extract_workflow_approval_requests
-from harness_telegram.config import EmacsConfig
+from harness_telegram.backend import (
+    EmacsHarnessBackend,
+    ProcessBackend,
+    extract_workflow_approval_requests,
+)
+from harness_telegram.config import (
+    EmacsConfig,
+    ProcessAgentConfig,
+    ProcessConfig,
+    ProcessRouteConfig,
+)
 from harness_telegram.types import ApprovalDecision, HarnessResult, InboundMessage
 
 
@@ -159,3 +169,83 @@ async def test_handle_workflow_approval_emits_compat_event(monkeypatch, tmp_path
     assert result.reply == "done"
     assert seen_payloads[-1]["text"] == "workflow-approve: run-1"
 
+
+@pytest.mark.asyncio
+async def test_process_backend_runs_configured_agent_with_session_env(tmp_path):
+    backend = ProcessBackend(
+        ProcessConfig(
+            default_agent="codex",
+            state_root=str(tmp_path),
+            agents={
+                "codex": ProcessAgentConfig(
+                    command=[
+                        sys.executable,
+                        "-c",
+                        (
+                            "import os, sys; "
+                            "print(os.environ['HARNESS_TELEGRAM_AGENT_ID']); "
+                            "print(os.environ['HARNESS_TELEGRAM_SESSION_KEY']); "
+                            "print(sys.stdin.read().strip())"
+                        ),
+                    ],
+                )
+            },
+        )
+    )
+
+    result = await backend.handle_message(
+        InboundMessage(
+            sender_id="123",
+            sender_name="Sean",
+            chat_type="direct",
+            chat_id="123",
+            message_id="42",
+            text="build this",
+            session_key="agent:codex:main",
+            agent_id="codex",
+        )
+    )
+
+    assert result.status == "success"
+    assert "codex" in (result.reply or "")
+    assert "agent:codex:main" in (result.reply or "")
+    assert "build this" in (result.reply or "")
+    events = list((tmp_path / "sessions" / "agent-codex-main").glob("events.jsonl"))
+    assert len(events) == 1
+
+
+@pytest.mark.asyncio
+async def test_process_backend_routes_chat_to_agent(tmp_path):
+    backend = ProcessBackend(
+        ProcessConfig(
+            default_agent="codex",
+            state_root=str(tmp_path),
+            routes=[ProcessRouteConfig(chat_id="-1001", thread_id="77", agent="claude")],
+            agents={
+                "codex": ProcessAgentConfig(
+                    command=[sys.executable, "-c", "print('codex')"],
+                    input_mode="none",
+                ),
+                "claude": ProcessAgentConfig(
+                    command=[sys.executable, "-c", "print('claude')"],
+                    input_mode="none",
+                ),
+            },
+        )
+    )
+
+    result = await backend.handle_message(
+        InboundMessage(
+            sender_id="123",
+            sender_name="Sean",
+            chat_type="group",
+            chat_id="-1001",
+            thread_id="77",
+            message_id="42",
+            text="hello",
+            session_key="agent:codex:telegram:group:-1001:thread:77",
+            agent_id="codex",
+        )
+    )
+
+    assert result.reply == "claude"

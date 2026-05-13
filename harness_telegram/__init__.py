@@ -8,8 +8,17 @@ from harness_telegram.approvals import (
     encode_approval_callback,
     generate_approval_id,
 )
-from harness_telegram.backend import Backend, EmacsHarnessBackend
-from harness_telegram.config import EmacsConfig, HarnessTelegramConfig, TelegramConfig, load_config
+from harness_telegram.backend import Backend, EmacsHarnessBackend, ProcessBackend, build_backend
+from harness_telegram.config import (
+    BackendConfig,
+    EmacsConfig,
+    HarnessTelegramConfig,
+    ProcessAgentConfig,
+    ProcessConfig,
+    ProcessRouteConfig,
+    TelegramConfig,
+    load_config,
+)
 from harness_telegram.session import SessionKey, build_session_key, parse_session_key
 from harness_telegram.telegram import TelegramAdapter, normalize_telegram_message
 from harness_telegram.types import (
@@ -28,6 +37,7 @@ __all__ = [
     "ApprovalDecision",
     "ApprovalRequest",
     "Attachment",
+    "BackendConfig",
     "Backend",
     "EmacsConfig",
     "EmacsHarnessBackend",
@@ -38,10 +48,15 @@ __all__ = [
     "OutboundMessage",
     "PendingApproval",
     "PendingApprovalStore",
+    "ProcessAgentConfig",
+    "ProcessBackend",
+    "ProcessConfig",
+    "ProcessRouteConfig",
     "SessionKey",
     "TelegramAdapter",
     "TelegramConfig",
     "build_approval_keyboard",
+    "build_backend",
     "build_session_key",
     "decode_approval_callback",
     "encode_approval_callback",
@@ -50,4 +65,3 @@ __all__ = [
     "normalize_telegram_message",
     "parse_session_key",
 ]
-
